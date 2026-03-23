@@ -1,9 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "@/lib/systemPrompt";
 
 export const runtime = "edge";
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: Request) {
   const { mode, text, image, mimeType } = await request.json();
@@ -18,56 +15,43 @@ export async function POST(request: Request) {
   const userMessage =
     mode === "image"
       ? {
-          role: "user" as const,
+          role: "user",
           content: [
             {
-              type: "image" as const,
+              type: "image",
               source: {
-                type: "base64" as const,
-                media_type: mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                type: "base64",
+                media_type: mimeType,
                 data: image,
               },
             },
             {
-              type: "text" as const,
+              type: "text",
               text: "Extract all visible copy from this screenshot and run a full tone check on it.",
             },
           ],
         }
       : {
-          role: "user" as const,
+          role: "user",
           content: `Run a tone check on this content:\n\n${text}`,
         };
 
+  let anthropicRes: Response;
   try {
-    const stream = client.messages.stream({
-      model: "claude-opus-4-6",
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
-      messages: [userMessage],
-    });
-
-    const encoder = new TextEncoder();
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            if (
-              chunk.type === "content_block_delta" &&
-              chunk.delta.type === "text_delta"
-            ) {
-              controller.enqueue(encoder.encode(chunk.delta.text));
-            }
-          }
-          controller.close();
-        } catch (err) {
-          controller.error(err);
-        }
+    anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
+        "anthropic-version": "2023-06-01",
       },
-    });
-
-    return new Response(readable, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
+      body: JSON.stringify({
+        model: "claude-opus-4-6",
+        max_tokens: 16000,
+        stream: true,
+        system: SYSTEM_PROMPT,
+        messages: [userMessage],
+      }),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -76,4 +60,57 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  if (!anthropicRes.ok) {
+    const body = await anthropicRes.text();
+    return new Response(JSON.stringify({ error: body }), {
+      status: anthropicRes.status,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Parse the SSE stream from Anthropic and forward only text_delta content
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    async start(controller) {
+      const reader = anthropicRes.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (!data || data === "[DONE]") continue;
+            try {
+              const event = JSON.parse(data);
+              if (
+                event.type === "content_block_delta" &&
+                event.delta?.type === "text_delta"
+              ) {
+                controller.enqueue(encoder.encode(event.delta.text));
+              }
+            } catch {
+              // ignore malformed SSE lines
+            }
+          }
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
+
+  return new Response(readable, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }
