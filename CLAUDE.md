@@ -145,6 +145,101 @@ Intuit avoids terms with racist roots. Key replacements:
 
 ---
 
+### Accessibility & Inclusion
+
+> Core philosophy: Intuit products are for everyone, no matter what.
+
+**POUR principles (Perceivable, Operable, Understandable, Robust)**
+
+*Perceivable*
+- Write with screen readers in mind
+- Include meaningful alt text for images, icons, and controls
+- Create text alternatives for charts and graphs (data tables work well)
+- Videos must have captions that identify speakers with synchronized timing
+- Don't place essential text inside images
+- Don't rely on color alone to indicate status
+- Verify sufficient contrast between foreground text and background
+- Make link text meaningful and visually distinct
+- Don't depend solely on sound for notifications
+
+*Operable*
+- Separate and space interaction targets adequately
+- Keep screens uncluttered — avoid excessive density
+- Ensure touch targets are visually identifiable on mobile
+- Maintain visible, persistent field labels inside input fields
+- Arrange labels, tooltips, and fields in logical tab order
+- Display validation and error messages clearly
+
+*Understandable*
+- Aim for **5th to 8th grade readability** (Flesch-Kincaid or Gunning Fog as guides)
+- No lines exceeding 80 characters; no sentences over 20 words
+- Use proper heading hierarchy (H1, H2, etc.) for screen reader navigation
+- Create unique, informative page titles
+- Don't replace field labels with placeholder ghost text
+- Pair icons with text labels — don't rely on icons alone
+
+*Robust*
+- Design for multiple platforms, browsers, and devices
+- Be platform agnostic — don't dictate specific technologies users must use
+
+---
+
+**Alt text**
+
+Do:
+- Be clear and concise (under 125 characters)
+- Include visible text if the image contains text
+- Describe actions when images represent actions
+- Capitalize the opening letter
+- Include color when contextually important
+
+Don't:
+- Start with "picture of" or "image of"
+- Keyword stuff
+- Add component names
+
+Special: Leave decorative images with empty alt text (`alt=""`)
+
+---
+
+**Plain language & readability**
+
+- Target: 5th–8th grade reading level
+- Use the fewest words necessary
+- Prefer short words (3–5 letters) over long ones (8–9 letters)
+- Use simple verb tenses only — no progressive or perfect forms
+- Replace jargon with everyday alternatives ("use" not "utilize")
+- Exception: use technical terms when writing for expert audiences (e.g., accountants)
+- Use readability tools (Flesch-Kincaid, Gunning Fog, Writer.com) as guides, not rules
+
+---
+
+**Inclusive language**
+
+- Write in second person ("you") to stay gender-neutral
+- Use "they/them/their" when gender is unknown — not "s/he" or "he/she"
+- Greetings: use folks, everyone, team, friends — not guys, dudes, sir, ma'am
+- Gender selection: offer Female, Male, Non-binary/Other — never "Other" alone
+- Include diverse names, ethnicities, pronouns, and occupations in examples
+- Don't default to Westernized names (e.g., John Smith)
+- Only collect gender, age, or ethnicity data when required; explain why
+
+**Outdated terms to replace:**
+
+| Avoid | Use instead |
+|---|---|
+| grandfather clause | legacy |
+| wheelchair-bound | person who uses a wheelchair |
+| crazy / insane / psycho | person diagnosed with a mental health condition |
+| sanity check | confidence check |
+| Indian | Indigenous |
+| crippled / handicapped | disabled, person with a disability |
+| transgendered | transgender, trans |
+
+Note: Not everyone prefers person-first language. "Deaf" (identity-first) is preferred by many in the Deaf community. Context matters.
+
+---
+
 ### Working Conventions
 
 - Run the tone checker (`skills/tone-checker.md`) before finalizing any piece
