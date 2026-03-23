@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "@/lib/systemPrompt";
 
+export const runtime = "edge";
+
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: Request) {
@@ -57,10 +59,9 @@ export async function POST(request: Request) {
               controller.enqueue(encoder.encode(chunk.delta.text));
             }
           }
+          controller.close();
         } catch (err) {
           controller.error(err);
-        } finally {
-          controller.close();
         }
       },
     });
