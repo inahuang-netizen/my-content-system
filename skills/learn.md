@@ -20,7 +20,11 @@ When logging a learning:
 4. **Date**: When it was logged
 
 ## Storage
-Learnings are appended to `memory.md` under a `## Learnings` section.
+Learnings are appended to two files:
+- `memory.md` — under a `## Learnings` section (persistent knowledge base)
+- `output.md` — as a dated entry (running session output log)
+
+When logging, append the entry to both files.
 
 ## Example Invocation
 > /learn I discovered that X approach works better than Y for this use case because...
