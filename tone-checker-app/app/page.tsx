@@ -36,7 +36,14 @@ export default function Home() {
       });
 
       if (!res.ok) {
-        setError("Something went wrong. Check your API key and try again.");
+        let detail = `Status ${res.status}`;
+        try {
+          const body = await res.json();
+          detail = body.error ?? detail;
+        } catch {
+          // ignore
+        }
+        setError(`Error: ${detail}`);
         setLoading(false);
         return;
       }
