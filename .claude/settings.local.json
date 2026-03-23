@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:design.intuit.com)",
+      "WebFetch(domain:contentdesign.intuit.com)",
+      "WebSearch",
+      "Bash(python tone_checker.py)"
+    ]
+  }
+}
