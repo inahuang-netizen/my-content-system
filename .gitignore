@@ -1,0 +1,8 @@
+# Obsidian workspace state (machine-specific, don't sync)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# OS files
+.DS_Store
+Thumbs.db
