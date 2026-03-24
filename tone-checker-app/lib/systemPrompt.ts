@@ -105,73 +105,31 @@ Deduct points per violation. Partial credit is allowed.
 
 ## Output Format
 
-Always respond using EXACTLY this structure with no deviations:
+Respond with ONLY a valid JSON object — no markdown, no explanation, no code fences. Exactly this shape:
 
-## Tone Check Report
+{
+  "score": <number 0–100>,
+  "verdict": "<Approve | Revise | Rewrite>",
+  "categories": [
+    { "name": "Voice & Tone", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" },
+    { "name": "Active Voice & Verb Tenses", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" },
+    { "name": "Contractions & Register", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" },
+    { "name": "Capitalization & Formatting", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" },
+    { "name": "Word Choices", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" },
+    { "name": "Readability", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" },
+    { "name": "Anti-Racist & Inclusive Language", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" },
+    { "name": "Accessibility", "status": "<pass | flag>", "note": "<finding if flagged, empty string if pass>" }
+  ],
+  "summary": "<1–2 sentences on overall quality and top priority if revising>"
+}
 
-**Overall verdict:** Approve / Revise / Rewrite
-**Score:** [X]/100
-
----
-
-### 1. Voice & Tone — Pass / Flag
-[finding, or "Looks good"]
-
-### 2. Active Voice & Verb Tenses — Pass / Flag
-[finding, or "Looks good"]
-
-### 3. Contractions & Register — Pass / Flag
-[finding, or "Looks good"]
-
-### 4. Capitalization & Formatting — Pass / Flag
-[finding, or "Looks good"]
-
-### 5. Word Choices — Pass / Flag
-[finding, or "Looks good"]
-
-### 6. Readability — Pass / Flag
-[finding, or "Looks good"]
-
-### 7. Anti-Racist & Inclusive Language — Pass / Flag
-[finding, or "Looks good"]
-
-### 8. Accessibility — Pass / Flag
-[finding, or "Looks good"]
-
----
-
-### Score breakdown
-
-| Category | Score | Max |
-|---|---|---|
-| Voice & Tone | X | 20 |
-| Active Voice & Verb Tenses | X | 10 |
-| Contractions & Register | X | 10 |
-| Capitalization & Formatting | X | 10 |
-| Word Choices | X | 15 |
-| Readability | X | 15 |
-| Anti-Racist & Inclusive Language | X | 10 |
-| Accessibility | X | 10 |
-| **Total** | **X** | **100** |
-
----
-
-### Flagged Issues & Suggested Rewrites
-
-| # | Original | Issue | Suggested rewrite |
-|---|---|---|---|
-| 1 | "..." | Reason | "..." |
-
-(If no issues: write "No issues found.")
-
----
-
-### Summary
-[1–2 sentences on overall quality and the top priority if revising]
-
----
+Rules:
+- "note" for a pass must be an empty string ""
+- "note" for a flag must be a short, specific finding (e.g. '"click" → use "select"')
+- "summary" must be 1–2 sentences, plain text
+- Do not include any text outside the JSON object
 
 ## Verdict Guide
-- **Approve** — 90–100 points, 0–1 minor flags
-- **Revise** — 75–89 points or 2–4 flags
-- **Rewrite** — below 75 or fundamental tone/voice mismatch`;
+- Approve — 90–100 points
+- Revise — 75–89 points
+- Rewrite — below 75 or fundamental tone/voice mismatch`;

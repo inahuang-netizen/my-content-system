@@ -6,10 +6,10 @@ export async function POST(request: Request) {
   const { mode, text, image, mimeType } = await request.json();
 
   if (mode === "text" && !text?.trim()) {
-    return new Response("No content provided.", { status: 400 });
+    return new Response(JSON.stringify({ error: "No content provided." }), { status: 400 });
   }
   if (mode === "image" && !image) {
-    return new Response("No image provided.", { status: 400 });
+    return new Response(JSON.stringify({ error: "No image provided." }), { status: 400 });
   }
 
   const userMessage =
@@ -19,11 +19,7 @@ export async function POST(request: Request) {
           content: [
             {
               type: "image",
-              source: {
-                type: "base64",
-                media_type: mimeType,
-                data: image,
-              },
+              source: { type: "base64", media_type: mimeType, data: image },
             },
             {
               type: "text",
@@ -47,7 +43,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-opus-4-6",
-        max_tokens: 16000,
+        max_tokens: 4096,
         stream: true,
         system: SYSTEM_PROMPT,
         messages: [userMessage],
@@ -69,48 +65,48 @@ export async function POST(request: Request) {
     });
   }
 
-  // Parse the SSE stream from Anthropic and forward only text_delta content
-  const encoder = new TextEncoder();
-  const readable = new ReadableStream({
-    async start(controller) {
-      const reader = anthropicRes.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+  // Collect the full streamed response then return as JSON
+  const reader = anthropicRes.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullText = "";
 
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (!data || data === "[DONE]") continue;
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const data = line.slice(6).trim();
-            if (!data || data === "[DONE]") continue;
-            try {
-              const event = JSON.parse(data);
-              if (
-                event.type === "content_block_delta" &&
-                event.delta?.type === "text_delta"
-              ) {
-                controller.enqueue(encoder.encode(event.delta.text));
-              }
-            } catch {
-              // ignore malformed SSE lines
-            }
-          }
+        const event = JSON.parse(data);
+        if (
+          event.type === "content_block_delta" &&
+          event.delta?.type === "text_delta"
+        ) {
+          fullText += event.delta.text;
         }
-        controller.close();
-      } catch (err) {
-        controller.error(err);
+      } catch {
+        // ignore malformed SSE lines
       }
-    },
-  });
+    }
+  }
 
-  return new Response(readable, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+  // Parse Claude's JSON output
+  try {
+    const result = JSON.parse(fullText.trim());
+    return new Response(JSON.stringify(result), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "Failed to parse response from Claude.", raw: fullText }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }

@@ -4,22 +4,29 @@ import { useState } from "react";
 import InputTabs from "@/components/InputTabs";
 import CopyInput from "@/components/CopyInput";
 import ImageUpload from "@/components/ImageUpload";
-import ResultsPanel from "@/components/ResultsPanel";
+import ReportCard from "@/components/ReportCard";
 
 type Mode = "text" | "image";
+
+type Report = {
+  score: number;
+  verdict: string;
+  categories: { name: string; status: "pass" | "flag"; note: string }[];
+  summary: string;
+};
 
 export default function Home() {
   const [mode, setMode] = useState<Mode>("text");
   const [text, setText] = useState("");
   const [image, setImage] = useState<{ base64: string; mimeType: string } | null>(null);
-  const [result, setResult] = useState("");
+  const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const canSubmit = mode === "text" ? text.trim().length > 0 : image !== null;
 
   async function handleCheck() {
-    setResult("");
+    setReport(null);
     setError("");
     setLoading(true);
 
@@ -35,34 +42,26 @@ export default function Home() {
         body: JSON.stringify(body),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        let detail = `Status ${res.status}`;
-        try {
-          const body = await res.json();
-          detail = body.error ?? detail;
-        } catch {
-          // ignore
-        }
-        setError(`Error: ${detail}`);
-        setLoading(false);
+        setError(data.error ?? `Error ${res.status}`);
         return;
       }
 
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-        setResult(accumulated);
-      }
+      setReport(data);
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleReset() {
+    setReport(null);
+    setError("");
+    setText("");
+    setImage(null);
   }
 
   return (
@@ -80,38 +79,62 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Input card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-          <div className="mb-4">
-            <InputTabs mode={mode} onChange={(m) => { setMode(m); setResult(""); setError(""); }} />
+        {/* Loading state */}
+        {loading && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-12 shadow-sm flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+            <p className="text-sm text-gray-400">Checking your content...</p>
           </div>
+        )}
 
-          {mode === "text" ? (
-            <CopyInput value={text} onChange={setText} />
-          ) : (
-            <ImageUpload onUpload={(base64, mimeType) => setImage({ base64, mimeType })} />
-          )}
+        {/* Input card — hidden while loading or showing report */}
+        {!loading && !report && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <div className="mb-4">
+              <InputTabs mode={mode} onChange={(m) => { setMode(m); setError(""); }} />
+            </div>
 
-          {error && (
-            <p className="mt-3 text-sm text-red-600">{error}</p>
-          )}
+            {mode === "text" ? (
+              <CopyInput value={text} onChange={setText} />
+            ) : (
+              <ImageUpload onUpload={(base64, mimeType) => setImage({ base64, mimeType })} />
+            )}
 
-          <button
-            onClick={handleCheck}
-            disabled={!canSubmit || loading}
-            className="mt-4 w-full py-2.5 px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? "Checking..." : "Check content →"}
-          </button>
-        </div>
+            {error && (
+              <p className="mt-3 text-sm text-red-600">{error}</p>
+            )}
 
-        {/* Results */}
-        <ResultsPanel content={result} loading={loading} />
+            <button
+              onClick={handleCheck}
+              disabled={!canSubmit}
+              className="mt-4 w-full py-2.5 px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Check content →
+            </button>
+          </div>
+        )}
+
+        {/* Report */}
+        {report && <ReportCard report={report} />}
+
+        {/* Check another */}
+        {report && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={handleReset}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              ← Check another
+            </button>
+          </div>
+        )}
 
         {/* Footer */}
-        <p className="mt-8 text-center text-xs text-gray-400">
-          Powered by Claude Opus 4.6 · Intuit Content Style Guide
-        </p>
+        {!loading && (
+          <p className="mt-8 text-center text-xs text-gray-400">
+            Powered by Claude Opus 4.6 · Intuit Content Style Guide
+          </p>
+        )}
       </div>
     </main>
   );
