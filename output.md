@@ -36,3 +36,44 @@ A running record of session outputs — learnings, content produced, and key dec
 
 **Output log**
 - Created `output.md` as a running session output log
+
+---
+
+## Session — 2026-03-24
+
+### What was built
+
+**Tone Checker web app — deployed to Vercel**
+- Built `tone-checker-app/` — a Next.js 14 web app for SF Dining Cam designers
+- Accepts pasted copy (text mode) or uploaded screenshots (image mode)
+- Calls Claude Opus 4.6 via the Anthropic API with the full Intuit style guide as system prompt
+- Streams the tone check report back in real time with markdown rendering
+- Color-coded score badge (0–100): Publish-ready / Minor revisions / Significant revisions / Rewrite required
+- Deployed to Vercel; auto-deploys on every push to `master`
+
+**Key technical decisions**
+- API route runs on Edge Runtime (no execution time limit — Claude can take 20–30s for a full report)
+- Route uses raw fetch + SSE parsing instead of the Anthropic SDK (SDK streaming doesn't work in Edge Runtime)
+- No auth — open access for the design team
+
+**Debugging resolved**
+- node_modules committed to git → removed with `git rm --cached`, rewrote commit history before pushing
+- 500 error → added try/catch and proper error responses to the API route
+- Vercel 10s timeout → switched to Edge Runtime
+- No results streaming → rewrote route to use raw fetch + SSE parsing (bypasses SDK)
+- Anthropic billing error → added credits to console.anthropic.com
+
+**Files created**
+- `tone-checker-app/app/api/check/route.ts` — Edge Runtime POST endpoint, SSE streaming
+- `tone-checker-app/app/page.tsx` — main UI with tab switcher, input, submit, results
+- `tone-checker-app/app/layout.tsx` — root layout
+- `tone-checker-app/app/globals.css` — Tailwind base
+- `tone-checker-app/components/InputTabs.tsx` — Text / Screenshot tab toggle
+- `tone-checker-app/components/CopyInput.tsx` — textarea for copy paste
+- `tone-checker-app/components/ImageUpload.tsx` — drag-and-drop image upload with preview
+- `tone-checker-app/components/ResultsPanel.tsx` — streamed markdown report renderer
+- `tone-checker-app/components/ScoreBadge.tsx` — color-coded score badge
+- `tone-checker-app/lib/systemPrompt.ts` — full Intuit style guide as API system prompt
+
+**Next: Phase 2**
+- Figma plugin integration — reads selected frame text via Figma Plugin API, sends to `/api/check`, displays report inside Figma
